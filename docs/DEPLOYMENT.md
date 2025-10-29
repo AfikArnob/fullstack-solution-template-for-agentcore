@@ -7,7 +7,6 @@ This guide walks you through deploying the GenAIID AgentCore Starter Pack (GASP)
 Before deploying, ensure you have:
 
 - **Node.js 18+** installed
-- **Python 3.9+** installed
 - **AWS CLI** configured with appropriate permissions
 - **AWS CDK CLI** installed: `npm install -g aws-cdk`
 - An AWS account with sufficient permissions to create:
@@ -52,7 +51,7 @@ cd ..
 Install infrastructure dependencies:
 ```bash
 cd infra
-pip install -r requirements.txt
+npm install
 cd ..
 ```
 
@@ -61,15 +60,16 @@ cd ..
 If this is your first time using CDK in this AWS account/region:
 ```bash
 cd infra
-cdk bootstrap
+npx cdk bootstrap
 ```
 
 ### 3. Deploy Infrastructure
 
-Deploy the complete stack:
+Build and deploy the complete stack:
 ```bash
 cd infra
-cdk deploy
+npm run build
+npx cdk deploy --all
 ```
 
 The deployment will:
@@ -111,13 +111,14 @@ After deployment completes, you need to create a user in Cognito to access the a
 To update the frontend code:
 ```bash
 cd infra
-cdk deploy --hotswap
+npx cdk deploy --all --hotswap
 ```
 
 To update the backend agent:
 ```bash
 cd infra
-cdk deploy
+npm run build
+npx cdk deploy --all
 ```
 
 ### Custom Domain (Optional)
@@ -126,7 +127,7 @@ To use a custom domain:
 
 1. Create an ACM certificate in `us-east-1` region
 2. Update `infra/config.yaml` with your domain and certificate ARN
-3. Redeploy: `cdk deploy`
+3. Redeploy: `npm run build && npx cdk deploy --all`
 4. Update your DNS to point to the CloudFront distribution
 
 ### Monitoring and Logs
@@ -140,7 +141,7 @@ To use a custom domain:
 To remove all resources:
 ```bash
 cd infra
-cdk destroy
+npx cdk destroy --all
 ```
 
 **Warning**: This will delete all data including S3 buckets and ECR images.

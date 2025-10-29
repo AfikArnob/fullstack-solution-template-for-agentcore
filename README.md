@@ -18,7 +18,6 @@ The GenAIID AgentCore Starter Pack (GASP) is a starter project repository that e
 ## Prerequisites
 
 - Node.js 18+ 
-- Python 3.9+
 - AWS CLI configured
 - AWS CDK CLI installed (`npm install -g aws-cdk`)
 
@@ -35,15 +34,16 @@ npm install
 Infrastructure:
 ```bash
 cd infra
-pip install -r requirements.txt
+npm install
 ```
 
 ### 2. Deploy Infrastructure
 
 ```bash
 cd infra
-cdk bootstrap  # Only needed once per AWS account/region
-cdk deploy
+npm run build           # Compile TypeScript
+npx cdk bootstrap       # Only needed once per AWS account/region
+npx cdk deploy --all
 ```
 
 ### 3. Local Development
@@ -68,12 +68,12 @@ genaiid-agentcore-starter-pack/
 │   ├── public/             # Static assets
 │   └── package.json
 ├── infra/                   # CDK infrastructure code
-│   ├── stacks/             # CDK stack definitions
-│   ├── utils/              # Utility functions
-│   ├── custom_constructs/  # Custom CDK constructs
-│   ├── app.py              # CDK app entry point
+│   ├── lib/                # CDK stack definitions
+│   │   └── utils/          # Utility functions
+│   ├── bin/                # CDK app entry point
 │   ├── config.yaml         # Configuration
-│   └── requirements.txt
+│   ├── package.json
+│   └── tsconfig.json
 ├── patterns/               # Agent pattern implementations
 │   └── strands-single-agent/ # Basic strands agent pattern
 │       ├── basic_agent.py  # Agent implementation
@@ -129,8 +129,9 @@ Edit `infra/config.yaml` to customize:
 
 ### Infrastructure Changes
 
-- Modify stacks in `infra/stacks/`
-- Deploy changes with `cdk deploy`
+- Modify stacks in `infra/lib/`
+- Build TypeScript: `npm run build`
+- Deploy changes with `npx cdk deploy --all`
 
 ## Deployment
 
@@ -148,7 +149,7 @@ To remove all resources:
 
 ```bash
 cd infra
-cdk destroy
+npx cdk destroy --all
 ```
 
 ## Next Steps
