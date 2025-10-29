@@ -46,7 +46,23 @@ npx cdk bootstrap       # Only needed once per AWS account/region
 npx cdk deploy --all
 ```
 
-### 3. Local Development
+### 3. Create Admin User
+
+```bash
+./scripts/create-admin-user.sh
+```
+
+Default: `admin` / `Admin123!` (change password after first login)
+
+**Optional parameters:** `[stack_name] [username] [email]`
+
+Examples:
+```bash
+./scripts/create-admin-user.sh my-stack myuser user@example.com
+./scripts/create-admin-user.sh my-stack myuser
+```
+
+### 4. Local Development
 
 ```bash
 cd frontend
