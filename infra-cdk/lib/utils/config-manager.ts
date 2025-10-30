@@ -11,6 +11,7 @@ export interface AppConfig {
   }
   backend: {
     pattern: string
+    memory_id?: string | null
   }
 }
 
@@ -35,6 +36,7 @@ export class ConfigManager {
         },
         backend: {
           pattern: "strands-single-agent",
+          memory_id: null,
         },
       }
     }
@@ -53,6 +55,7 @@ export class ConfigManager {
         },
         backend: {
           pattern: parsedConfig.backend?.pattern || "strands-single-agent",
+          memory_id: parsedConfig.backend?.memory_id || null,
         },
       }
     } catch (error) {
