@@ -5,6 +5,9 @@ import * as codebuild from "aws-cdk-lib/aws-codebuild"
 import * as iam from "aws-cdk-lib/aws-iam"
 import * as s3Assets from "aws-cdk-lib/aws-s3-assets"
 import * as ssm from "aws-cdk-lib/aws-ssm"
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb"
+import * as apigateway from "aws-cdk-lib/aws-apigateway"
+import * as logs from "aws-cdk-lib/aws-logs"
 // Note: Using CfnResource for BedrockAgentCore as the L2 construct may not be available yet
 import { PythonFunction } from "@aws-cdk/aws-lambda-python-alpha"
 import * as lambda from "aws-cdk-lib/aws-lambda"
@@ -45,6 +48,12 @@ export class BackendStack extends cdk.NestedStack {
 
     // Store runtime ARN in SSM for frontend stack
     this.createRuntimeSSMParameters(props.config)
+
+    // Create Feedback DynamoDB table (example of application data storage)
+    const feedbackTable = this.createFeedbackTable(props.config)
+
+    // Create Feedback API resources (example of best-practice API Gateway + Lambda pattern)
+    this.createFeedbackApi(props.config, feedbackTable)
   }
 
   private createCognitoUserPool(config: AppConfig): void {
@@ -380,6 +389,130 @@ export class BackendStack extends cdk.NestedStack {
     new ssm.StringParameter(this, "RuntimeArnParam", {
       parameterName: `/${config.stack_name_base}/runtime-arn`,
       stringValue: this.runtimeArn,
+    })
+  }
+
+  // Creates a DynamoDB table for storing user feedback.
+  private createFeedbackTable(config: AppConfig): dynamodb.Table {
+    const feedbackTable = new dynamodb.Table(this, "FeedbackTable", {
+      tableName: `${config.stack_name_base}-feedback`,
+      partitionKey: {
+        name: "feedbackId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    })
+
+    // Add GSI for querying by feedbackType with timestamp sorting
+    feedbackTable.addGlobalSecondaryIndex({
+      indexName: "feedbackType-timestamp-index",
+      partitionKey: {
+        name: "feedbackType",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "timestamp",
+        type: dynamodb.AttributeType.NUMBER,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    })
+
+    return feedbackTable
+  }
+
+  /**
+   * Creates an API Gateway with Lambda integration for the feedback endpoint.
+   * This is an EXAMPLE implementation demonstrating best practices for API Gateway + Lambda.
+   *
+   * API Contract - POST /feedback
+   * Authorization: Bearer <cognito-access-token> (required)
+   *
+   * Request Body:
+   *   sessionId: string (required, max 100 chars, alphanumeric with -_) - Conversation session ID
+   *   message: string (required, max 5000 chars) - Agent's response being rated
+   *   feedbackType: "positive" | "negative" (required) - User's rating
+   *   comment: string (optional, max 5000 chars) - User's explanation for rating
+   *
+   * Success Response (200):
+   *   { success: true, feedbackId: string }
+   *
+   * Error Responses:
+   *   400: { error: string } - Validation failure (missing fields, invalid format)
+   *   401: { error: "Unauthorized" } - Invalid/missing JWT token
+   *   500: { error: "Internal server error" } - DynamoDB or processing error
+   *
+   * Implementation: infra-cdk/lambdas/feedback/index.py
+   */
+
+  private createFeedbackApi(config: AppConfig, feedbackTable: dynamodb.Table): void {
+    // Create Lambda function for feedback using Python
+    const feedbackLambda = new PythonFunction(this, "FeedbackLambda", {
+      functionName: `${config.stack_name_base}-feedback`,
+      runtime: lambda.Runtime.PYTHON_3_13,
+      entry: path.join(__dirname, "..", "lambdas", "feedback"),
+      handler: "handler",
+      environment: {
+        TABLE_NAME: feedbackTable.tableName,
+        ALLOWED_ORIGINS: "*", // Wildcard CORS - see API Gateway comment below for security rationale
+      },
+      timeout: cdk.Duration.seconds(30),
+      logGroup: new logs.LogGroup(this, "FeedbackLambdaLogGroup", {
+        logGroupName: `/aws/lambda/${config.stack_name_base}-feedback`,
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+    })
+
+    // Grant Lambda permissions to write to DynamoDB
+    feedbackTable.grantWriteData(feedbackLambda)
+
+    /*
+     * CORS TODO: Wildcard (*) used because Backend deploys before Frontend in nested stack order.
+     * For Lambda proxy integrations, the Lambda's ALLOWED_ORIGINS env var is the primary CORS control.
+     * API Gateway defaultCorsPreflightOptions below only handles OPTIONS preflight requests.
+     * See detailed explanation and fix options in: infra-cdk/lambdas/feedback/index.py
+     */
+    const api = new apigateway.RestApi(this, "FeedbackApi", {
+      restApiName: `${config.stack_name_base}-api`,
+      description: "API for user feedback and future endpoints",
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: ["POST", "OPTIONS"],
+        allowHeaders: ["Content-Type", "Authorization"],
+      },
+      deployOptions: {
+        stageName: "prod",
+        throttlingRateLimit: 100,
+        throttlingBurstLimit: 200,
+      },
+    })
+
+    // Create Cognito authorizer
+    const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, "FeedbackApiAuthorizer", {
+      cognitoUserPools: [this.userPool],
+      identitySource: "method.request.header.Authorization",
+      authorizerName: `${config.stack_name_base}-authorizer`,
+    })
+
+    // Create /feedback resource and POST method
+    const feedbackResource = api.root.addResource("feedback")
+    feedbackResource.addMethod("POST", new apigateway.LambdaIntegration(feedbackLambda), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    })
+
+    // Store API URL in SSM for frontend
+    new ssm.StringParameter(this, "FeedbackApiUrlParam", {
+      parameterName: `/${config.stack_name_base}/feedback-api-url`,
+      stringValue: api.url,
+      description: "Feedback API Gateway URL",
+    })
+
+    // Output - only the API URL needed for frontend
+    new cdk.CfnOutput(this, "FeedbackApiUrl", {
+      description: "Feedback API URL",
+      value: api.url,
     })
   }
 }
